@@ -18,13 +18,16 @@ public class CommandPolicyTest {
     @Test public void processesDeduplicateChildProcesses() {
         assertEquals(2,CommandPolicy.processNames("UID NAME\nu0_a1 com.example.app\nu0_a1 com.example.app:worker\nu0_a2 com.example.other\n0 init").size());
     }
+    @Test public void processSnapshotIsUserScoped() {
+        assertEquals(java.util.Set.of("com.owner.app"), CommandPolicy.processNames("10001 com.owner.app\n1010001 com.work.app\nu10_a1 com.work.other",0));
+    }
     @Test public void cpuDoesNotDoubleCountGuestTime() {
         assertArrayEquals(new long[]{36,9},DeviceRepository.cpuTicks("cpu  1 2 3 4 5 6 7 8 9 10"));
     }
     @Test public void boostSkipsForegroundAndUnknownStates() {
-        assertFalse(MainActivity.backgroundState("2 (TOP)"));
-        assertFalse(MainActivity.backgroundState("ERROR: denied"));
-        assertFalse(MainActivity.backgroundState("20 (NONEXISTENT)"));
-        assertTrue(MainActivity.backgroundState("19 (CACHED_EMPTY)"));
+        assertFalse(CommandPolicy.backgroundState("2 (TOP)"));
+        assertFalse(CommandPolicy.backgroundState("ERROR: denied"));
+        assertFalse(CommandPolicy.backgroundState("20 (NONEXISTENT)"));
+        assertTrue(CommandPolicy.backgroundState("19 (CACHED_EMPTY)"));
     }
 }

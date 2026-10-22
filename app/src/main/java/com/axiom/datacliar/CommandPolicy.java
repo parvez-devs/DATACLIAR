@@ -43,4 +43,9 @@ public final class CommandPolicy {
         }
         return result;
     }
+    public static boolean backgroundState(String raw){
+        // AOSP am prints a numeric process state before the human-readable name.
+        java.util.regex.Matcher m=java.util.regex.Pattern.compile("^\\s*(\\d+)\\b").matcher(raw);
+        if(!m.find())return false;int state=Integer.parseInt(m.group(1));return state>=7&&state<20;
+    }
 }

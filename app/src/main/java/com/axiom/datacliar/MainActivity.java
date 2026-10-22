@@ -181,7 +181,7 @@ public class MainActivity extends Activity {
                 for(int i=0;i<candidates.size();i++)if(selected[i]){
                     if(Thread.currentThread().isInterrupted())break;
                     DeviceRepository.App a=candidates.get(i);
-                    if(boost){String state=call("state",a.pkg);if(!backgroundState(state)){skipped++;continue;}}
+                    if(boost){String state=call("state",a.pkg);if(!CommandPolicy.backgroundState(state)){skipped++;continue;}}
                     String r=call(boost?"stop":"cache",a.pkg);
                     if(r.startsWith("ERROR:")){failed++;errors.append("\n").append(a.label).append(": ").append(r);}else ok++;
                 }
@@ -189,11 +189,6 @@ public class MainActivity extends Activity {
                 runOnUiThread(()->{busy=false;lastResult=result;render();scan();message("Batch finished",result);});
             });
         }).show();
-    }
-    static boolean backgroundState(String raw){
-        // AOSP am prints a numeric process state before the human-readable name.
-        java.util.regex.Matcher m=java.util.regex.Pattern.compile("^\\s*(\\d+)\\b").matcher(raw);
-        if(!m.find())return false;int state=Integer.parseInt(m.group(1));return state>=7&&state<20;
     }
     private void access(){
         body.addView(text("Unlock device controls",27,WHITE));body.addView(text("Your permissions. Your choice.",14,MUTED));
