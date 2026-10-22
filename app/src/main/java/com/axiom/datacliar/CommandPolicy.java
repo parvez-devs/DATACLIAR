@@ -7,7 +7,7 @@ public final class CommandPolicy {
     private CommandPolicy() {}
     public static String[] command(String action, String pkg, int user, boolean cacheSupported) {
         if (user < 0) throw new IllegalArgumentException("Invalid Android user");
-        if (action.equals("processes")) return new String[]{"ps", "-A", "-o", "UID,NAME"};
+        if (action.equals("processes")) return new String[]{"ps", "-A", "-w", "-o", "UID,NAME"};
         if (action.equals("cacheHelp")) return new String[]{"pm", "help"};
         if (action.equals("cpu")) return new String[]{"cat", "/proc/stat"};
         if (pkg == null || !pkg.matches("[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]+)+"))

@@ -2,6 +2,7 @@ name: Android build and preview release
 on:
   push:
     branches: [main]
+    paths-ignore: ["**.md", "docs/**"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -42,11 +43,14 @@ jobs:
           script: |
             gradle --no-daemon connectedDebugAndroidTest
             adb pull /sdcard/Android/data/com.axiom.datacliar/files/screenshots screenshots
+            bash scripts/emulator-control-smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: emulator-screenshots
-          path: screenshots/
+          path: |
+            screenshots/
+            control-smoke.log
       - name: Package preview
         run: |
           mkdir -p dist
