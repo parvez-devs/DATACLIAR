@@ -23,16 +23,17 @@ public class NavigationTest {
             screenshot(inst,"home");
             tap(inst,activity,"Apps");assertScreen(inst,activity,"Your app collection");screenshot(inst,"apps");
             tap(inst,activity,"Disabled");assertScreen(inst,activity,"Disabled apps");screenshot(inst,"disabled");
-            tap(inst,activity,"Access");assertScreen(inst,activity,"Your permissions");screenshot(inst,"access");
+            tap(inst,activity,"Setup");assertScreen(inst,activity,"Your permissions");assertScreen(inst,activity,"Shizuku setup");assertScreen(inst,activity,"Connect / authorize");screenshot(inst,"setup");
+            tap(inst,activity,"Connect / authorize");assertScreen(inst,activity,"Shizuku setup");
             tap(inst,activity,"Home");assertScreen(inst,activity,"Your phone. In focus.");
         } finally {inst.runOnMainSync(activity::finish);}
     }
-    @Test public void recreationPreservesSearchAndAppHasNoElevatedDependency() throws Exception {
+    @Test public void recreationPreservesSearchAndAppHasNoInternetPermission() throws Exception {
         Instrumentation inst=InstrumentationRegistry.getInstrumentation();
         String pkg=inst.getTargetContext().getPackageName();
         android.content.pm.PackageInfo info=inst.getTargetContext().getPackageManager().getPackageInfo(pkg,android.content.pm.PackageManager.GET_PERMISSIONS);
-        if(info.requestedPermissions!=null)for(String permission:info.requestedPermissions){assertNotEquals("android.permission.INTERNET",permission);assertFalse(permission.contains("shizuku"));}
-        try{Class.forName("rikka.shizuku.Shizuku");fail("Shizuku must not be bundled");}catch(ClassNotFoundException expected){}
+        if(info.requestedPermissions!=null)for(String permission:info.requestedPermissions){assertNotEquals("android.permission.INTERNET",permission);}
+        assertNotNull(Class.forName("rikka.shizuku.Shizuku"));
         MainActivity activity=(MainActivity)inst.startActivitySync(new Intent(inst.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         inst.waitForIdleSync();tap(inst,activity,"Apps");
         inst.runOnMainSync(()->{EditText search=findSearch(activity.getWindow().getDecorView());assertNotNull(search);search.setText("saved-query");});

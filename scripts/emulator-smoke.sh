@@ -6,3 +6,5 @@ adb shell am instrument -w com.axiom.datacliar.test/androidx.test.runner.Android
 grep -Eq 'OK \([0-9]+ tests?\)' navigation-test.log
 adb pull /sdcard/Android/data/com.axiom.datacliar/files/screenshots screenshots
 
+
+bash scripts/emulator-control-smoke.sh

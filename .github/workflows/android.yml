@@ -48,10 +48,11 @@ jobs:
           path: |
             screenshots/
             navigation-test.log
+            control-smoke.log
       - name: Package preview
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/DATACLIAR-1.1.0-no-root-preview.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dist/DATACLIAR-1.2.0-shizuku-preview.apk
           cd dist
           sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
@@ -71,4 +72,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="preview-${GITHUB_RUN_NUMBER}"
-          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "DATACLIAR 1.1.0 No-root Preview ${GITHUB_RUN_NUMBER}" --notes-file RELEASE_NOTES.md --prerelease
+          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "DATACLIAR 1.2.0 Shizuku Preview ${GITHUB_RUN_NUMBER}" --notes-file RELEASE_NOTES.md --prerelease
