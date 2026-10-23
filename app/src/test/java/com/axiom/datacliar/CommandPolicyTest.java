@@ -20,5 +20,7 @@ public class CommandPolicyTest {
         assertFalse(CommandPolicy.containsPackage("package:com.app.ext","com.app"));
         assertTrue(CommandPolicy.containsComponent("priority=0\ncom.launcher/.MainActivity","com.launcher"));
         assertFalse(CommandPolicy.containsComponent("com.launcher.ext/.MainActivity","com.launcher"));
+        assertFalse(CommandPolicy.containsComponent("permission cache: com.example.app", "com.example.app"));
+        assertTrue(CommandPolicy.containsComponent("admin=ComponentInfo{com.example.app/.AdminReceiver}", "com.example.app"));
     }
 }

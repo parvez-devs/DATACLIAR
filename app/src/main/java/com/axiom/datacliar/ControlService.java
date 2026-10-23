@@ -49,7 +49,7 @@ public final class ControlService extends IControlService.Stub {
         String keyboard=required(new String[]{"settings","--user",user,"get","secure","default_input_method"});
         if(keyboard.startsWith(pkg+"/"))throw new SecurityException("Active keyboard is protected");
         String admins=required(new String[]{"dumpsys","device_policy"});
-        if(admins.contains(pkg))throw new SecurityException("Device-policy app is protected");
+        if(CommandPolicy.containsComponent(admins,pkg))throw new SecurityException("Device-policy app is protected");
         String vpn=required(new String[]{"cmd","package","query-services","--brief","--query-flags","512","--user",user,"-a","android.net.VpnService"});
         if(CommandPolicy.containsComponent(vpn,pkg))throw new SecurityException("VPN app is protected");
     }

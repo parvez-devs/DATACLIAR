@@ -26,6 +26,6 @@ public final class CommandPolicy {
         return false;
     }
     public static boolean containsComponent(String output,String pkg){
-        return java.util.regex.Pattern.compile("(?m)(?:^|\\s)"+java.util.regex.Pattern.quote(pkg)+"/").matcher(output).find();
+        return java.util.regex.Pattern.compile("(?m)(?:^|[\\s{=])"+java.util.regex.Pattern.quote(pkg)+"/").matcher(output).find();
     }
 }
