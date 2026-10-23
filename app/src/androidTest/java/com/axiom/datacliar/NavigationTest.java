@@ -63,6 +63,8 @@ public class NavigationTest {
         return null;
     }
     private void screenshot(Instrumentation inst,String name)throws Exception {
+        inst.waitForIdleSync();
+        android.os.SystemClock.sleep(500); // Let the compositor present the new view before capture.
         Bitmap bitmap=inst.getUiAutomation().takeScreenshot();assertNotNull(bitmap);
         File dir=new File(inst.getTargetContext().getExternalFilesDir(null),"screenshots");assertTrue(dir.isDirectory()||dir.mkdirs());
         try(FileOutputStream out=new FileOutputStream(new File(dir,name+".png"))){assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG,100,out));}
