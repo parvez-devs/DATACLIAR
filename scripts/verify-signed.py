@@ -18,7 +18,7 @@ if any(not (root/'distribution'/signed).is_file() for signed,_ in pairs):
 for signed,unsigned in pairs:
     path=root/'distribution'/signed
     result=subprocess.run(['java','-jar',str(jar),'verify','--verbose','--print-certs',str(path)],check=True,text=True,capture_output=True).stdout
-    matches=re.findall(r'Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)',result)
-    if matches!=[expected]:raise RuntimeError('Unexpected signer: '+signed)
+    matches=re.findall(r'(?:Signer #\d+|V\d+(?:\.\d+)? Signer): certificate SHA-256 digest: ([0-9a-fA-F]+)',result)
+    if set(matches)!={expected} or not re.search(r'Number of signers:\s*1\b',result):raise RuntimeError('Unexpected signer: '+signed)
     if contents(path)!=contents(root/'unsigned'/unsigned):raise RuntimeError('Signed candidate does not match this source build: '+signed)
     print('Verified certificate and build contents: '+signed)
