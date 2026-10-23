@@ -42,7 +42,7 @@ JDK 17, Android SDK 35, Gradle 8.9:
 ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
 ```
 
-CI gates publication on unit tests, lint, compilation, Android 35 navigation/recreation/setup tests and a shell-identity control smoke test against only the disposable test APK. The shell harness verifies command behavior; it does not prove actual-phone Shizuku pairing, Binder lifecycle or Wi-Fi disconnect behavior. See [TESTING.md](TESTING.md).
+CI gates publication on unit tests, lint, compilation, Android 35 navigation/recreation/setup tests and a shell-identity control smoke test against only the separate disposable fixture APK. The shell harness verifies command behavior; it does not prove actual-phone Shizuku pairing, Binder lifecycle or Wi-Fi disconnect behavior. See [TESTING.md](TESTING.md).
 
 The privileged UserService avoids app Context PackageManager/ContentResolver calls that mismatch shell UID attribution. No arbitrary shell console or string interpolation is exposed; commands use a closed action vocabulary with separately passed arguments, profile checks and command timeouts.
 
