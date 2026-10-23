@@ -28,7 +28,7 @@ Shizuku must be started again after reboot and can also stop due to Android/OEM 
 - Searchable app inventory, recycled rows, user/system filters and Disabled tab; current profile only.
 - Optional Usage Access for app/data/cache sizes; unknown remains unknown; cache is already included in data.
 - Shizuku: freeze/unfreeze, force stop, sleep/wake, explicit destructive app-data clear.
-- Cache-only: Android 13+ AND `pm help` must advertise `--cache-only`; never falls back to data clearing. On unsupported phones, use Android App info manually.
+- Cache-only: Android 13+ AND `pm help` must advertise `--cache-only`; never falls back to data clearing. On unsupported phones or an unconfirmed/timeout result, use Android App info manually. The Android 35 CI image advertised cache-only but timed out; automatic cache cleanup is not certified on that image.
 - System apps, DATACLIAR, Shizuku, launcher, active keyboard, device-policy apps and VPN apps are protected. Essential-app checks fail closed if shell queries fail. Unfreeze permits restoring disabled user apps.
 - Android App info/device storage shortcuts; own-cache cleanup.
 

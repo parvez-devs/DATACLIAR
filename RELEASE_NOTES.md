@@ -12,3 +12,5 @@ Official Shizuku must be installed separately. Pairing/start happen in Android S
 CI includes build/unit/lint, Android 35 navigation/setup/recreation tests and a shell control smoke test. Actual-phone pairing and Wi-Fi-to-mobile-data continuity still require device verification.
 
 Debug-signed prerelease; older previews may require uninstall/reinstall due to signing changes. Unfreeze apps before uninstalling. Check SHA256SUMS.txt.
+
+Known emulator limits: Android 35 overrode the sleep hint (the app accurately reports unconfirmed state) and its advertised cache-only command timed out. Automatic cache-only cleanup is not certified on that image; use Android App info when refused or unconfirmed. Release tests independently check state/error reporting, preservation of fixture data after the cache attempt, and actual data deletion after explicit clear-data.

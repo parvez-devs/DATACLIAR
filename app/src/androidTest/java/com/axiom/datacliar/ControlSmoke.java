@@ -2,7 +2,7 @@ package com.axiom.datacliar;
 
 /** Shell identity harness; only the separate disposable fixture APK is mutated. Not shipped in the main APK. */
 public final class ControlSmoke {
-    public static void main(String[] args)throws Exception{
+    public static void main(String[] args)throws Throwable{
         ControlService service=new ControlService(0);String fixture="com.axiom.datacliar.fixture";
         try{
             ok(service.execute("ping","",0));
@@ -24,13 +24,16 @@ public final class ControlSmoke {
             if(!readCommand("am","get-inactive","--user","0",fixture).contains("Idle=false"))throw new AssertionError("Wake state not confirmed");
             ok(service.execute("stop",fixture,0));
             String cache=service.execute("cache",fixture,0);
-            if(cache.startsWith("ERROR:")&&!cache.contains("Cache-only is unavailable")&&!cache.contains("Safe cache-only cleanup needs"))throw new AssertionError(cache);
             System.out.println("CACHE_CHECK: "+cache);
+            boolean unavailable=cache.contains("Cache-only is unavailable")||cache.contains("Safe cache-only cleanup needs");
+            boolean timeout=cache.startsWith("ERROR: Cache-only cleanup was not confirmed: ERROR: Operation timed out");
+            if(cache.startsWith("ERROR:")&&!unavailable&&!timeout)throw new AssertionError(cache);
+            if(!cache.startsWith("ERROR:")&&readFixture("cache/temporary.txt").contains("DATACLIAR_FIXTURE"))throw new AssertionError("Cache cleanup reported success but cache remains");
             if(!readFixture("files/keep.txt").contains("DATACLIAR_FIXTURE"))throw new AssertionError("Cache operation erased app data");
             ok(service.execute("data",fixture,0));
             if(readFixture("files/keep.txt").contains("DATACLIAR_FIXTURE"))throw new AssertionError("Data clear did not remove fixture data");
-            System.out.println("CONTROL_SMOKE_OK: protections, freeze/unfreeze, standby verification/OS override, wake, stop, cache capability, data");
-        }finally{service.execute("unfreeze",fixture,0);}
+            System.out.println("CONTROL_SMOKE_OK: protections, freeze/unfreeze, standby verification/OS override, wake, stop, cache success or explicit safe refusal/timeout, data");
+        }catch(Throwable failure){failure.printStackTrace(System.out);throw failure;}finally{service.execute("unfreeze",fixture,0);}
         System.exit(0);
     }
     private static String readFixture(String path)throws Exception{

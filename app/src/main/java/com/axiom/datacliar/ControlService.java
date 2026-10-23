@@ -28,7 +28,7 @@ public final class ControlService extends IControlService.Stub {
                 cache=required(new String[]{"pm","help"}).contains("--cache-only");
             }
             String result=run(CommandPolicy.command(action,pkg,user,cache),20);
-            if(result.startsWith("ERROR:"))return result;
+            if(result.startsWith("ERROR:"))return action.equals("cache")?"ERROR: Cache-only cleanup was not confirmed: "+result+" Use Android App info > Storage > Clear cache.":result;
             if((action.equals("data")||action.equals("cache"))&&!result.equals("Success"))return "ERROR: Android did not confirm clearing: "+result;
             if(action.equals("freeze")||action.equals("unfreeze")){
                 boolean disabled=CommandPolicy.containsPackage(required(new String[]{"pm","list","packages","-d","--user",u}),pkg);
