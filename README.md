@@ -32,7 +32,7 @@ Shizuku must be started again after reboot and can also stop due to Android/OEM 
 - System apps, DATACLIAR, Shizuku, launcher, active keyboard, device-policy apps and VPN apps are protected. Essential-app checks fail closed if shell queries fail. Unfreeze permits restoring disabled user apps.
 - Android App info/device storage shortcuts; own-cache cleanup.
 
-Freeze hides an app's launcher icon. Restore through **Disabled → app → Unfreeze / enable**. **Unfreeze apps before uninstalling DATACLIAR.** Sleep is an inactivity hint, not permanent freezing. Stop/sleep may delay notifications. No automatic boost or background surveillance.
+Freeze hides an app's launcher icon. Restore through **Disabled → app → Unfreeze / enable**. **Unfreeze apps before uninstalling DATACLIAR.** Sleep is an OS-dependent, asynchronous inactivity hint, not permanent freezing. If Android refuses or overrides it, the app reports an unconfirmed state instead of success. Stop/sleep may delay notifications. No automatic boost or background surveillance.
 
 ## Build and validation
 

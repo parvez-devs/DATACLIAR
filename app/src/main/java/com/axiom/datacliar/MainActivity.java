@@ -108,7 +108,7 @@ public class MainActivity extends Activity {
     }
     private void details(DeviceRepository.App a){
         String info=a.pkg+"\n\n"+(a.total()<0?"Storage sizes need optional Usage Access.":"App: "+size(a.code)+"\nData (includes cache): "+size(a.data)+"\nCache: "+size(a.cache));
-        String[] options={"Storage details","Android App info","Clear cache only","Clear ALL app data","Force stop",a.disabled?"Unfreeze / enable":"Freeze / disable","Sleep (inactive)","Wake (active)"};
+        String[] options={"Storage details","Android App info","Clear cache only","Clear ALL app data","Force stop",a.disabled?"Unfreeze / enable":"Freeze / disable","Sleep (OS-dependent)","Wake (active)"};
         new AlertDialog.Builder(this).setTitle(a.label).setItems(options,(d,index)->{
             if(index==0){message(a.label,info);return;}
             if(index==1){open(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+a.pkg)));return;}
@@ -117,7 +117,7 @@ public class MainActivity extends Activity {
             String action=new String[]{"","","cache","data","stop",a.disabled?"unfreeze":"freeze","sleep","wake"}[index];
             String protectedReason=protectedReason(a,action);
             if(protectedReason!=null){message("Protected app",protectedReason);return;}
-            String warning=action.equals("data")?"Permanently erase ALL local data, accounts, settings and files for "+a.label+"? This cannot be undone.":action.equals("freeze")?"Disable "+a.label+"? Its icon disappears and notifications stop. Restore it in Disabled. Unfreeze apps before uninstalling DATACLIAR.":action.equals("cache")?"Clear only cache for "+a.label+"? Android 13+ and OS command support are required. This never falls back to wiping app data.":action.equals("sleep")?"Mark "+a.label+" inactive? Android may wake it later. Notifications can be delayed.":options[index]+" for "+a.label+"? Stopping apps may delay notifications.";
+            String warning=action.equals("data")?"Permanently erase ALL local data, accounts, settings and files for "+a.label+"? This cannot be undone.":action.equals("freeze")?"Disable "+a.label+"? Its icon disappears and notifications stop. Restore it in Disabled. Unfreeze apps before uninstalling DATACLIAR.":action.equals("cache")?"Clear only cache for "+a.label+"? Android 13+ and OS command support are required. This never falls back to wiping app data.":action.equals("sleep")?"Mark "+a.label+" inactive? Android may refuse or override this hint, especially while charging or recently used. This is not permanent freezing. Notifications can be delayed.":options[index]+" for "+a.label+"? Stopping apps may delay notifications.";
             new AlertDialog.Builder(this).setTitle(options[index]).setMessage(warning).setNegativeButton("Cancel",null).setPositiveButton("Continue",(x,y)->{if(bridge.ready()&&!bridge.busy())bridge.perform(action,a.pkg,a.label,android.os.Process.myUid()/100000);else message("Not ready","Reconnect Shizuku or wait for the current operation.");}).show();
         }).setNegativeButton("Close",null).show();
     }

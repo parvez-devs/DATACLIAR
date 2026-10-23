@@ -2,7 +2,7 @@
 
 - Native Bengali setup guide with official Shizuku installation, pairing/start instructions, settings shortcuts and Connect/authorize.
 - Live connection state, application-scoped reconnect and serialized controls that survive Activity recreation. No Wi-Fi requirement/check after Shizuku starts.
-- In-app freeze/unfreeze, stop, sleep/wake, explicit data clear and capability-gated cache-only cleanup.
+- In-app freeze/unfreeze, stop, OS-dependent sleep/wake, explicit data clear and capability-gated cache-only cleanup. Inactivity is verified with bounded re-reads; OS refusal is reported as an error.
 - Protected system/essential apps, current-profile restriction, bounded commands and no data-wipe fallback for cache.
 - Fixed shell UID attribution by avoiding app-context PackageManager/ContentResolver in the privileged service.
 - Dashboard, search, optional storage access and own-cache cleanup remain available without Shizuku.

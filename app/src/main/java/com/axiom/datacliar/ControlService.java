@@ -35,8 +35,15 @@ public final class ControlService extends IControlService.Stub {
                 if(disabled!=action.equals("freeze"))return "ERROR: Requested enabled/disabled state was not confirmed. Refresh before retrying.";
             }
             if(action.equals("sleep")||action.equals("wake")){
-                String state=required(new String[]{"am","get-inactive","--user",u,pkg});
-                if(!state.contains("Idle="+(action.equals("sleep")?"true":"false")))return "ERROR: Android did not confirm the inactive state (charging or recent use may override it): "+state;
+                String expected="Idle="+(action.equals("sleep")?"true":"false");
+                String state="";
+                // Android applies the inactivity hint asynchronously. Re-read; never re-run the mutation.
+                for(int attempt=0;attempt<10;attempt++){
+                    state=required(new String[]{"am","get-inactive","--user",u,pkg});
+                    if(state.contains(expected))break;
+                    Thread.sleep(200);
+                }
+                if(!state.contains(expected))return "ERROR: Android did not confirm the inactive state (charging or recent use may override it): "+state;
                 result=state;
             }
             return result.isEmpty()?"OK: command accepted by Android":result;
