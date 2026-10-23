@@ -1,4 +1,4 @@
-# ◈ DATACLIAR 1.2 — Native dashboard + Shizuku setup
+# ◈ DATACLIAR 1.3 — Native controls, batches and signed upgrades
 
 Native Android app (Android 8+). Basic dashboard works without root or Shizuku. Optional Shizuku controls run inside DATACLIAR after setup.
 
@@ -48,6 +48,14 @@ The privileged UserService avoids app Context PackageManager/ContentResolver cal
 
 ## Distribution and privacy
 
-Installable **debug-signed prerelease**, not a production-signed store build. Clean CI runners may generate different certificates; uninstall an older preview if Android reports a signature mismatch, after unfreezing apps. Production upgrades require a persistent private release key. SHA256SUMS.txt accompanies the APK.
+Installable APK signed with a persistent private release key, separate from old debug previews. Old previews may need one-time migration after unfreezing apps. Future updates must reuse the persistent key. SHA256SUMS.txt accompanies the APK.
 
-No Internet permission, ads, analytics or uploads. External setup/download links open in other apps. Shizuku API by RikkaW, MIT license, shown in Setup and included under assets.
+No ads, analytics or device-data uploads. Optional update checks/downloads use Internet permission and the Android installer asks before installation. External setup/download links open in other apps. Shizuku API by RikkaW, MIT license, shown in Setup and included under assets.
+
+## Version 1.3 upgrades
+
+Batch freeze/unfreeze/stop, favourites and bounded local operation history are available. Select apps explicitly, review the batch and use Stop after current app to cancel remaining work. Each result is independent; completed changes are not rolled back. Bulk data deletion is deliberately unavailable.
+
+The Updates screen provides manual checks and an optional once-per-day check on launch. Verified downloads check SHA-256, package, version and signer before opening Android's user-confirmed installer. Internet permission is now used only for these GitHub requests; local device/app data is not uploaded. No silent installation or background push notifications.
+
+Version 1.3 begins a persistent release-signing lineage. Old debug previews may need a one-time reinstall after unfreezing apps. Future releases signed with the same private key can update in place. See [SIGNING.md](SIGNING.md) for the candidate-signing and source-verification workflow. Private keys never enter public GitHub contents or artifacts.

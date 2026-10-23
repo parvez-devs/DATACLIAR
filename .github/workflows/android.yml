@@ -1,4 +1,4 @@
-name: Android build and preview release
+name: Android build and signed release
 on:
   push:
     branches: [main]
@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -28,36 +28,70 @@ jobs:
           gradle-version: '8.9'
       - name: Compile, test and lint
         run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest :fixture:assembleDebug
+      - name: Build unsigned signing candidates
+        run: |
+          set -euo pipefail
+          mkdir -p unsigned
+          APP_VERSION_CODE=$(sed -n 's/^versionCode=//p' app/version.properties)
+          APP_VERSION_NAME=$(sed -n 's/^versionName=//p' app/version.properties)
+          echo "APP_VERSION_CODE=$APP_VERSION_CODE" >> "$GITHUB_ENV"
+          echo "APP_VERSION_NAME=$APP_VERSION_NAME" >> "$GITHUB_ENV"
+          ./gradlew --no-daemon :app:assembleRelease -PversionCodeOverride=$((APP_VERSION_CODE - 1)) -PversionNameOverride="${APP_VERSION_NAME}-upgrade-base"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk unsigned/upgrade-base-unsigned.apk
+          ./gradlew --no-daemon :app:assembleRelease
+          cp app/build/outputs/apk/release/app-release-unsigned.apk unsigned/app-unsigned.apk
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk unsigned/instrumentation-unsigned.apk
+          tool=$(find "$ANDROID_HOME/build-tools" -path '*/lib/apksigner.jar' | sort -V | tail -n1)
+          cp "$tool" unsigned/apksigner.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-signing-candidate
+          path: unsigned/*
+      - name: Verify persistent signing and source match
+        id: signed
+        run: |
+          set +e
+          python3 scripts/verify-signed.py
+          result=$?
+          if [ "$result" -eq 2 ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+          elif [ "$result" -eq 0 ]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            exit "$result"
+          fi
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Android emulator smoke test
+      - name: Android emulator feature and upgrade tests
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          SIGNED_READY: ${{ steps.signed.outputs.ready }}
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: bash scripts/emulator-smoke.sh
+          script: bash scripts/emulator-smoke.sh && if [ "$SIGNED_READY" = true ]; then bash scripts/emulator-upgrade.sh; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: emulator-screenshots
+          name: emulator-verification
           path: |
             screenshots/
             navigation-test.log
             control-smoke.log
-      - name: Package preview
-        run: |
-          mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/DATACLIAR-1.2.0-shizuku-preview.apk
-          cd dist
-          sha256sum *.apk > SHA256SUMS.txt
+            upgrade-seed.log
+            upgrade-verify.log
+      - name: Package signed release
+        if: steps.signed.outputs.ready == 'true'
+        run: python3 scripts/prepare-distribution.py
       - uses: actions/upload-artifact@v4
+        if: steps.signed.outputs.ready == 'true'
         with:
-          name: DATACLIAR-preview
+          name: DATACLIAR-signed
           path: dist/*
       - uses: actions/upload-artifact@v4
         if: always()
@@ -67,9 +101,18 @@ jobs:
             app/build/reports/tests/
             app/build/reports/androidTests/
             app/build/reports/lint-results-debug.html
-      - name: Publish installable preview
+      - name: Publish signed release and update manifest
+        if: steps.signed.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="preview-${GITHUB_RUN_NUMBER}"
-          gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "DATACLIAR 1.2.0 Shizuku Preview ${GITHUB_RUN_NUMBER}" --notes-file RELEASE_NOTES.md --prerelease
+          set -euo pipefail
+          tag="v${APP_VERSION_NAME}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            mkdir -p existing-release
+            gh release download "$tag" --dir existing-release
+            cmp "dist/DATACLIAR-${APP_VERSION_NAME}.apk" "existing-release/DATACLIAR-${APP_VERSION_NAME}.apk"
+            cmp dist/update.json existing-release/update.json
+          else
+            gh release create "$tag" dist/* --target "$GITHUB_SHA" --title "DATACLIAR ${APP_VERSION_NAME}" --notes-file RELEASE_NOTES.md --latest
+          fi

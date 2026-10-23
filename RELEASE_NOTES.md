@@ -1,16 +1,13 @@
-# DATACLIAR 1.2.0 — Shizuku setup preview
+# DATACLIAR 1.3.0
 
-- Native Bengali setup guide with official Shizuku installation, pairing/start instructions, settings shortcuts and Connect/authorize.
-- Live connection state, application-scoped reconnect and serialized controls that survive Activity recreation. No Wi-Fi requirement/check after Shizuku starts.
-- In-app freeze/unfreeze, stop, OS-dependent sleep/wake, explicit data clear and capability-gated cache-only cleanup. Inactivity is verified with bounded re-reads; OS refusal is reported as an error.
-- Protected system/essential apps, current-profile restriction, bounded commands and no data-wipe fallback for cache.
-- Fixed shell UID attribution by avoiding app-context PackageManager/ContentResolver in the privileged service.
-- Dashboard, search, optional storage access and own-cache cleanup remain available without Shizuku.
+- Batch freeze/unfreeze/force-stop with explicit app selection and confirmation, per-app results and stop-after-current cancellation. No bulk app-data wipe.
+- Persistent favourites, Favourites filter and local history of the last 200 results. Interrupted operations are marked and never automatically retried.
+- Native Updates screen: manual GitHub check, optional daily-on-launch check, verified download and Android-confirmed installation. SHA-256, package, version and signing certificate are checked.
+- Persistent private release signing. In-place upgrades from this signing lineage retain app data; release CI tests a signed version increment and verifies favourites/history survive.
+- Bengali Shizuku setup, live status and in-app controls remain available. Dashboard works without Shizuku.
 
-Official Shizuku must be installed separately. Pairing/start happen in Android Settings and Shizuku; this APK guides and connects. Android 11+ supports wireless startup; older Android needs PC/USB or root. Reboot or service termination requires startup again. OEM policies may stop Shizuku before power-off; uninterrupted service is not guaranteed.
+Migration: earlier debug-signed previews use different certificates. Unfreeze apps before removing an old preview; a one-time reinstall may be needed to enter the new signing lineage. Subsequent releases must reuse the new private key. The key is not in this repository or public CI artifacts.
 
-CI includes build/unit/lint, Android 35 navigation/setup/recreation tests and a shell control smoke test. Actual-phone pairing and Wi-Fi-to-mobile-data continuity still require device verification.
+Updates now require Internet permission only for optional GitHub checks/downloads, and installation permission for the user-confirmed Android installer. Device inventory, favourites and operation history are never uploaded. Daily checks are off by default. No background push notifications or silent installs.
 
-Debug-signed prerelease; older previews may require uninstall/reinstall due to signing changes. Unfreeze apps before uninstalling. Check SHA256SUMS.txt.
-
-Known emulator limits: Android 35 overrode the sleep hint (the app accurately reports unconfirmed state) and its advertised cache-only command timed out. Automatic cache-only cleanup is not certified on that image; use Android App info when refused or unconfirmed. Release tests independently check state/error reporting, preservation of fixture data after the cache attempt, and actual data deletion after explicit clear-data.
+Platform limits remain: Shizuku must be paired/started separately and restarted after reboot or service loss. OEM policies can stop it before power-off. Sleep is an OS-dependent inactivity hint. Android 35 emulator refuses the sleep hint and times out its advertised cache-only command; these outcomes are reported accurately and cache-only never falls back to clearing data. Use Android App info when automatic cache cleanup is unconfirmed.

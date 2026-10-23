@@ -21,3 +21,12 @@
 - Essential launcher/keyboard/VPN/admin/system targets refuse changes. Clear data requires explicit destructive confirmation.
 - Grant/revoke Usage Access; unknown storage values are not shown as zero. Large fonts, split screen and large app lists remain usable.
 - Verify APK checksum and signature compatibility separately. Never use important apps as deletion fixtures.
+
+## Version 1.3 release gate
+
+- JVM tests reject untrusted update hosts, wrong signer/hash/version metadata, duplicate batch targets and unsupported bulk-data actions.
+- Native tests cover favourites/history persistence, read-only update content-provider boundaries, history/update navigation, saved search and the expected update permissions.
+- Signed candidate contents must equal the current unsigned build, excluding APK signature records. All three candidates must verify against the pinned certificate.
+- In the emulator, install a lower version signed with the persistent key, seed favourites/history and an interrupted operation, then `adb install -r` the signed release. Verify the version increment and preserved local state; interrupted work must remain marked interrupted rather than retried.
+- Actual-device Shizuku pairing and Wi-Fi-to-mobile-data continuity remain manual acceptance checks. Batch cancellation stops after the current command; already completed changes are not rolled back.
+- Update checks are off by default, do not upload device data, and use HTTPS only to project release hosts. Download verification must reject tampered APKs or a different signer before opening Android's installer. Test unknown-source permission denial and user cancellation on the target phone.

@@ -17,6 +17,8 @@ public final class ShizukuBridge {
     private final java.util.concurrent.ExecutorService operations=java.util.concurrent.Executors.newSingleThreadExecutor();
     private final android.content.SharedPreferences preferences;
     private boolean busy;
+    private volatile boolean cancelled;
+    private final AppStore store;
     private String lastResult;
     private volatile IControlService service;
     private boolean binding;
@@ -26,9 +28,10 @@ public final class ShizukuBridge {
     private final Shizuku.OnBinderDeadListener dead=()->main.post(()->{generation++;service=null;binding=false;setState("Shizuku stopped — start it again in Setup");});
     private final Shizuku.OnRequestPermissionResultListener permission=(request,result)->main.post(()->{if(result==PackageManager.PERMISSION_GRANTED)connect(false);else setState("Permission denied — allow DATACLIAR in Shizuku, then reconnect");});
     private ShizukuBridge(Context c){
+        store=AppStore.get(c);
         preferences=c.getSharedPreferences("controls",Context.MODE_PRIVATE);
         lastResult=preferences.getString("lastResult","No privileged operations yet.");
-        args=new Shizuku.UserServiceArgs(new ComponentName(c,ControlService.class)).daemon(true).processNameSuffix("control").version(3);
+        args=new Shizuku.UserServiceArgs(new ComponentName(c,ControlService.class)).daemon(true).processNameSuffix("control").version(4);
         Shizuku.addBinderReceivedListenerSticky(received);Shizuku.addBinderDeadListener(dead);Shizuku.addRequestPermissionResultListener(permission);
     }
     public void observe(Runnable r){observers.add(r);}
@@ -37,10 +40,30 @@ public final class ShizukuBridge {
     private void notifyObservers(){for(Runnable r:new ArrayList<>(observers))r.run();}
     public boolean busy(){return busy;}
     public String lastResult(){return lastResult;}
-    public void perform(String action,String pkg,String label,int user){
-        if(busy||!ready())return;
-        busy=true;lastResult="Working: "+label+" • "+action;notifyObservers();
-        operations.execute(()->{String result=execute(action,pkg,user);main.post(()->{busy=false;lastResult=label+" • "+action+"\n"+result;preferences.edit().putString("lastResult",lastResult).apply();notifyObservers();});});
+    public void cancelBatch(){if(busy){cancelled=true;lastResult="Stopping after the current app finishes…";notifyObservers();}}
+    public void perform(String action,String pkg,String label,int user){run(action,Collections.singletonList(new BatchTarget(pkg,label)),user);}
+    public void performBatch(String action,List<BatchTarget> targets,int user){
+        if(!BatchTarget.batchAction(action))throw new IllegalArgumentException("Only freeze, unfreeze and stop are allowed in batches");
+        run(action,BatchTarget.unique(targets),user);
+    }
+    private void run(String action,List<BatchTarget> targets,int user){
+        if(busy||!ready()||targets.isEmpty())return;
+        List<BatchTarget> queue=new ArrayList<>(targets);busy=true;cancelled=false;lastResult="Starting "+queue.size()+" operation(s)…";notifyObservers();
+        operations.execute(()->{
+            int ok=0,failed=0,skipped=0;
+            for(int i=0;i<queue.size();i++){
+                BatchTarget target=queue.get(i);String id=store.begin(action,target.pkg,target.label);
+                String result;String outcome;
+                if(cancelled){result="Skipped: batch cancelled; no command executed";outcome="skipped";skipped++;}
+                else if(!ready()){result="ERROR: Shizuku disconnected; no command executed";outcome="failed";failed++;cancelled=true;}
+                else{result=execute(action,target.pkg,user);outcome=result.startsWith("ERROR:")?"failed":"completed";if(outcome.equals("completed"))ok++;else failed++;}
+                store.finish(id,outcome,result);
+                String progress=(i+1)+" / "+queue.size()+" • "+target.label+"\n"+result;
+                main.post(()->{lastResult=progress;notifyObservers();});
+            }
+            String summary=ok+" completed • "+failed+" failed • "+skipped+" skipped. See History for each app.";
+            main.post(()->{busy=false;lastResult=summary;preferences.edit().putString("lastResult",lastResult).apply();notifyObservers();});
+        });
     }
     public String status(){return state;}
     public boolean ready(){try{return service!=null&&service.asBinder().pingBinder()&&Shizuku.pingBinder()&&Shizuku.checkSelfPermission()==PackageManager.PERMISSION_GRANTED;}catch(Exception e){return false;}}
