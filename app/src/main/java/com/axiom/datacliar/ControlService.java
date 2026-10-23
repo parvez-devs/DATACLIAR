@@ -36,7 +36,7 @@ public final class ControlService extends IControlService.Stub {
             }
             if(action.equals("sleep")||action.equals("wake")){
                 String state=required(new String[]{"am","get-inactive","--user",u,pkg});
-                if(!state.contains("Idle="+(action.equals("sleep")?"true":"false")))return "ERROR: Android did not confirm the inactive state: "+state;
+                if(!state.contains("Idle="+(action.equals("sleep")?"true":"false")))return "ERROR: Android did not confirm the inactive state (charging or recent use may override it): "+state;
                 result=state;
             }
             return result.isEmpty()?"OK: command accepted by Android":result;

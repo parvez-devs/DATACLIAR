@@ -5,7 +5,7 @@
 - Unit tests: query normalization/filters, unknown storage, own-cache boundaries, command injection rejection, profile-scoped freeze/unfreeze, cache-only fail-closed behavior and exact package/component matching.
 - Compile app/test APKs, unit tests and lint.
 - Android 35 emulator without Shizuku: navigate Home/Apps/Disabled/Setup, render Bengali setup/Connect, attempt Connect without crashing, preserve search through Activity recreation, assert no Internet permission; screenshots.
-- Separate shell-identity harness: reject self/Shizuku/system/cross-profile/injection targets; freeze/unfreeze, sleep/wake, stop and clear data of only the disposable test APK; cache-only succeeds or is explicitly refused if unsupported. This is NOT a real Shizuku pairing test.
+- Separate shell-identity harness (emulator battery unplug/reset for App Standby): reject self/Shizuku/system/cross-profile/injection targets; freeze/unfreeze, sleep/wake, stop and clear data of only the disposable test APK; cache-only succeeds or is explicitly refused if unsupported. This is NOT a real Shizuku pairing test.
 
 ## Actual-phone acceptance checks (not certified by CI)
 
