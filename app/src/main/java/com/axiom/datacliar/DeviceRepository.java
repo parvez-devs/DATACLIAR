@@ -13,7 +13,7 @@ public final class DeviceRepository {
         public ApplicationInfo info;
         public String label, pkg;
         public long code = -1, data = -1, cache = -1;
-        public boolean frozen, system, running, sleeping;
+        public boolean frozen, system, running, sleeping, background;
         public long total() { return code < 0 ? -1 : code + data; } // data already includes cache
     }
     private final Context context;

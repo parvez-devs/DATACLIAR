@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
         root.setOnApplyWindowInsetsListener((v, insets) -> { v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom()); return insets; });
         LinearLayout header = column(); header.setPadding(dp(22),dp(12),dp(22),dp(8));
         TextView brand = text("◈  DATACLIAR",22,WHITE); brand.setTypeface(null,Typeface.BOLD); header.addView(brand);
-        statusText = text(service != null ? "●  Shizuku connected  ·  Device controls ready" : "○  Monitor mode  ·  Connect Shizuku for controls",12,service != null ? CYAN : MUTED); header.addView(statusText); root.addView(header);
+        statusText = text(service != null ? "●  Shizuku connected  ·  Device controls ready" : "○  Monitor mode  ·  Connect Shizuku for controls",12,service != null ? CYAN : MUTED); statusText.setOnClickListener(v->{page="Access";render();}); header.addView(statusText); root.addView(header);
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true); body=column(); body.setPadding(dp(18),dp(8),dp(18),dp(10)); scroll.addView(body); root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
         nav = new LinearLayout(this); nav.setPadding(dp(8),dp(6),dp(8),dp(6));
         for (String tab : new String[]{"Home","Apps","Frozen","Access"}) {
@@ -117,8 +117,8 @@ public class MainActivity extends Activity {
         body.addView(text(page.equals("Frozen")?"Disabled apps remain here. Unfreeze restores their launcher entry.":"Sorted by storage • current Android user",13,MUTED));
         if (!repo.usageAllowed()) body.addView(button("Allow Usage Access for storage sizes",()->open(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))));
         if (!page.equals("Frozen")) {
-            Spinner spinner=new Spinner(this); ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"All","User apps","System apps","Running","Sleeping"}); spinner.setAdapter(adapter);
-            spinner.setSelection(Arrays.asList("All","User apps","System apps","Running","Sleeping").indexOf(filter));
+            Spinner spinner=new Spinner(this); ArrayAdapter<String> adapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,new String[]{"All","User apps","System apps","Running","Background","Sleeping"}); spinner.setAdapter(adapter);
+            spinner.setSelection(Arrays.asList("All","User apps","System apps","Running","Background","Sleeping").indexOf(filter));
             spinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onNothingSelected(android.widget.AdapterView<?> p){} public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){filter=(String)p.getItemAtPosition(pos);showApps();}}); body.addView(spinner);
         }
         EditText search=new EditText(this); search.setSingleLine(true); search.setTextColor(WHITE); search.setHintTextColor(MUTED); search.setHint("Search app or package"); search.setContentDescription("Search installed apps"); search.setText(query); body.addView(search);
@@ -128,18 +128,18 @@ public class MainActivity extends Activity {
     private void showApps() {
         if (list==null || !(page.equals("Apps")||page.equals("Frozen"))) return;
         list.removeAllViews(); int count=0;
-        if (filter.equals("Running") && !processKnown && !page.equals("Frozen")) list.addView(text("Running count unavailable. Connect Shizuku and refresh; Android hides other apps' processes in monitor mode.",15,MUTED));
+        if ((filter.equals("Running")||filter.equals("Background")) && !processKnown && !page.equals("Frozen")) list.addView(text("Running count unavailable. Connect Shizuku and refresh; Android hides other apps' processes in monitor mode.",15,MUTED));
         for (DeviceRepository.App a : apps) {
             if (page.equals("Frozen") && !a.frozen) continue;
-            if (!page.equals("Frozen") && ((filter.equals("Running")&&!a.running)||(filter.equals("Sleeping")&&!a.sleeping)||(filter.equals("User apps")&&a.system)||(filter.equals("System apps")&&!a.system))) continue;
+            if (!page.equals("Frozen") && ((filter.equals("Running")&&!a.running)||(filter.equals("Background")&&!a.background)||(filter.equals("Sleeping")&&!a.sleeping)||(filter.equals("User apps")&&a.system)||(filter.equals("System apps")&&!a.system))) continue;
             if (!(a.label+" "+a.pkg).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) continue;
             count++; LinearLayout row=card(list); LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);
             ImageView icon=new ImageView(this);icon.setImageDrawable(a.info.loadIcon(getPackageManager()));icon.setContentDescription(a.label);top.addView(icon,new LinearLayout.LayoutParams(dp(40),dp(40)));
             TextView title=text("  "+a.label,17,WHITE);title.setTypeface(null,Typeface.BOLD);top.addView(title,new LinearLayout.LayoutParams(0,-2,1));row.addView(top);
             row.addView(text(a.pkg,11,MUTED));row.addView(text(a.total()<0?"Storage unavailable · enable Usage Access":size(a.total())+" total  ·  "+size(a.cache)+" cache",14,CYAN));
-            row.addView(text((a.system?"System • read-only":"User app")+(a.frozen?"  •  Frozen":"")+(a.running?"  •  Running process":"")+(a.sleeping?"  •  Inactive":""),11,MUTED));row.setOnClickListener(v->details(a));
+            row.addView(text((a.system?"System • read-only":"User app")+(a.frozen?"  •  Frozen":"")+(a.background?"  •  Background":a.running?"  •  Running process":"")+(a.sleeping?"  •  Inactive":""),11,MUTED));row.setOnClickListener(v->details(a));
         }
-        appCount.setText(scanning?"Scanning…":count+" apps shown"+(processKnown?"  •  "+apps.stream().filter(a->a.running).count()+" running apps":"  •  Running count unknown"));
+        appCount.setText(scanning?"Scanning…":count+" apps shown"+(processKnown?"  •  "+apps.stream().filter(a->a.running).count()+" running / "+apps.stream().filter(a->a.background).count()+" confirmed background":"  •  Running count unknown"));
         if(count==0&&!scanning)list.addView(text("No matching apps.",16,MUTED));
     }
     private void scan() {
@@ -148,6 +148,10 @@ public class MainActivity extends Activity {
             try {
                 String processes=service==null?"ERROR: No access":call("processes",""); processKnown=!processes.startsWith("ERROR:");
                 List<DeviceRepository.App> found=repo.apps(processKnown?CommandPolicy.processNames(processes,android.os.Process.myUid()/100000):Collections.emptySet());
+                for(DeviceRepository.App a:found) {
+                    if(Thread.currentThread().isInterrupted())return;
+                    if(a.running && service!=null)a.background=CommandPolicy.backgroundState(call("state",a.pkg));
+                }
                 runOnUiThread(()->{apps=found;scanning=false;showApps();});
             } catch(Exception e){runOnUiThread(()->{scanning=false;lastResult="Scan failed: "+e.getMessage();showApps();});}
         });
@@ -194,7 +198,14 @@ public class MainActivity extends Activity {
         body.addView(text("Unlock device controls",27,WHITE));body.addView(text("Your permissions. Your choice.",14,MUTED));
         LinearLayout u=card(body);u.addView(text("01  Usage Access",21,WHITE));u.addView(text(repo.usageAllowed()?"Granted · per-app storage is available":"Required to read app, data and cache sizes. No usage information leaves your phone.",14,MUTED));u.addView(button("Open Usage Access",()->open(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))));
         LinearLayout s=card(body);s.addView(text("02  Shizuku",21,WHITE));s.addView(text("Install Shizuku, start it using wireless debugging (Android 11+) or root, then allow DATACLIAR. After a reboot you may need to start Shizuku again.",14,MUTED));s.addView(button(service!=null?"Connected · reconnect":"Connect / authorize Shizuku",()->connect(true)));s.addView(button("Get Shizuku",()->open(new Intent(Intent.ACTION_VIEW,Uri.parse("https://shizuku.rikka.app/download/")))));
-        LinearLayout about=card(body);about.addView(text("Made for clarity",21,WHITE));about.addView(text("Native Android • no ads • no analytics • no network permission.\n\nFreeze = disable for this user, hide launcher entry. Sleep = Android inactive hint, not a permanent block.\n\nCache-only cleanup needs Android 13+ and OEM support. System, launcher, keyboard, VPN and device-admin apps are protected. Work profiles are not managed.\n\nUnfreeze apps before removing DATACLIAR. Recovery via ADB: pm enable --user 0 PACKAGE.\n\nVersion 1.0.0 preview",14,MUTED));
+        LinearLayout about=card(body);about.addView(text("Made for clarity",21,WHITE));about.addView(text("Native Android • no ads • no analytics • no network permission.\n\nFreeze = disable for this user, hide launcher entry. Sleep = Android inactive hint, not a permanent block.\n\nCache-only cleanup needs Android 13+ and OEM support. System, launcher, keyboard, VPN and device-admin apps are protected. Work profiles are not managed.\n\nUnfreeze apps before removing DATACLIAR. Recovery via ADB: pm enable --user 0 PACKAGE.\n\nVersion 1.0.0 preview",14,MUTED));about.addView(button("Open-source license",this::licenses));
+    }
+    private void licenses(){
+        try(java.io.InputStream in=getAssets().open("shizuku-license.txt")){
+            java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();byte[] bytes=new byte[2048];int count;
+            while((count=in.read(bytes))!=-1)out.write(bytes,0,count);
+            message("Shizuku API · MIT License",out.toString("UTF-8"));
+        }catch(Exception e){message("Credits","Shizuku API by RikkaW · MIT License · github.com/RikkaApps/Shizuku-API");}
     }
     private void connect(boolean ask){
         try{

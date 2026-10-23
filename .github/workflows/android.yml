@@ -27,7 +27,7 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Compile, test and lint
-        run: gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
+        run: ./gradlew --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -40,10 +40,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: |
-            gradle --no-daemon connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.axiom.datacliar/files/screenshots screenshots
-            bash scripts/emulator-control-smoke.sh
+          script: bash scripts/emulator-smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,6 +48,7 @@ jobs:
           path: |
             screenshots/
             control-smoke.log
+            navigation-test.log
       - name: Package preview
         run: |
           mkdir -p dist
