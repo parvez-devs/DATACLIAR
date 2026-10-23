@@ -22,10 +22,33 @@ public class NavigationTest {
             assertScreen(inst,activity,"Your phone. In focus.");
             screenshot(inst,"home");
             tap(inst,activity,"Apps");assertScreen(inst,activity,"Your app collection");screenshot(inst,"apps");
-            tap(inst,activity,"Frozen");assertScreen(inst,activity,"Frozen, not forgotten.");screenshot(inst,"frozen");
-            tap(inst,activity,"Access");assertScreen(inst,activity,"Unlock device controls");screenshot(inst,"access");
+            tap(inst,activity,"Disabled");assertScreen(inst,activity,"Disabled apps");screenshot(inst,"disabled");
+            tap(inst,activity,"Access");assertScreen(inst,activity,"Your permissions");screenshot(inst,"access");
             tap(inst,activity,"Home");assertScreen(inst,activity,"Your phone. In focus.");
         } finally {inst.runOnMainSync(activity::finish);}
+    }
+    @Test public void recreationPreservesSearchAndAppHasNoElevatedDependency() throws Exception {
+        Instrumentation inst=InstrumentationRegistry.getInstrumentation();
+        String pkg=inst.getTargetContext().getPackageName();
+        android.content.pm.PackageInfo info=inst.getTargetContext().getPackageManager().getPackageInfo(pkg,android.content.pm.PackageManager.GET_PERMISSIONS);
+        if(info.requestedPermissions!=null)for(String permission:info.requestedPermissions){assertNotEquals("android.permission.INTERNET",permission);assertFalse(permission.contains("shizuku"));}
+        try{Class.forName("rikka.shizuku.Shizuku");fail("Shizuku must not be bundled");}catch(ClassNotFoundException expected){}
+        MainActivity activity=(MainActivity)inst.startActivitySync(new Intent(inst.getTargetContext(),MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        inst.waitForIdleSync();tap(inst,activity,"Apps");
+        inst.runOnMainSync(()->{EditText search=findSearch(activity.getWindow().getDecorView());assertNotNull(search);search.setText("saved-query");});
+        Instrumentation.ActivityMonitor monitor=inst.addMonitor(MainActivity.class.getName(),null,false);
+        MainActivity restored=null;
+        try{
+            inst.runOnMainSync(activity::recreate);
+            restored=(MainActivity)monitor.waitForActivityWithTimeout(10000);assertNotNull("Recreated Activity",restored);inst.waitForIdleSync();
+            MainActivity current=restored;
+            inst.runOnMainSync(()->{assertNotNull(find(current.getWindow().getDecorView(),"Your app collection",false));assertEquals("saved-query",findSearch(current.getWindow().getDecorView()).getText().toString());});
+        }finally{inst.removeMonitor(monitor);MainActivity current=restored==null?activity:restored;inst.runOnMainSync(current::finish);}
+    }
+    private EditText findSearch(View view){
+        if(view instanceof EditText)return (EditText)view;
+        if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++){EditText found=findSearch(group.getChildAt(i));if(found!=null)return found;}}
+        return null;
     }
     private void tap(Instrumentation inst,MainActivity activity,String label) {
         inst.runOnMainSync(()->{TextView v=find(activity.getWindow().getDecorView(),label,true);assertNotNull(label,v);assertTrue(v.performClick());});inst.waitForIdleSync();

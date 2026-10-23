@@ -1,61 +1,44 @@
-# ◈ DATACLIAR
+# ◈ DATACLIAR 1.1 — No root, no Shizuku
 
-**Your phone. In focus.** Native Android device dashboard and Shizuku-powered app manager with a dark sky-blue interface.
+Native Android dashboard and app storage explorer. Android 8.0+ (API 26).
 
-[Download APK from Releases](https://github.com/parvez-devs/DATACLIAR/releases) · [Build status](https://github.com/parvez-devs/DATACLIAR/actions)
+[Download APK](https://github.com/parvez-devs/DATACLIAR/releases) · [Build and test](https://github.com/parvez-devs/DATACLIAR/actions)
 
-## What works
+## Features
 
-| Feature | Access / behavior |
-|---|---|
-| RAM available / total | Standard Android APIs; includes reclaimable memory |
-| Internal storage free / total | Usable data partition, not advertised capacity |
-| CPU cores / architecture / load | Load sampled from `/proc/stat`; Shizuku fallback; unavailable when OS denies it |
-| Installed app list + search | Includes disabled apps; current Android user only |
-| Per-app code, data and cache | Enable Usage Access; unknown values stay unknown; cache is already included in data |
-| Running app count | Shizuku `ps` snapshot matched to package process names; not a historical usage estimate |
-| Force stop | Shizuku; stops the app and can delay notifications |
-| Sleep / wake | Android inactive hint; Android may wake the app again |
-| Freeze / unfreeze | Disables/enables user apps; launcher entry disappears while disabled; remains in Frozen tab |
-| Clear app data | Explicit destructive confirmation; wipes local accounts/settings/files |
-| Cache-only / batch clean | Android 13+ **and** shell help must expose `--cache-only`; no fallback to data deletion |
-| Boost | Batch force-stop selected running background apps; skips foreground/unknown process states; no promised speed gain |
+- Live available/total RAM and free/total internal storage.
+- Available processor cores and architecture.
+- Installed apps, including disabled apps, for the current Android profile.
+- Search by app label or package, with user/system/disabled filters and recycled list rows.
+- Optional Usage Access for per-app app/data/cache sizes. Unknown values remain unavailable; cache is already part of data.
+- Android App info shortcuts to manually clear cache/data, force stop or enable/disable, when the OS permits.
+- Device storage settings shortcut and cleanup of DATACLIAR's own temporary cache.
+- Search, page and filter survive activity recreation. Background results do not update a destroyed Activity.
 
-System apps, DATACLIAR, Shizuku, the default launcher, active keyboard, VPN apps and device administrators are protected from controls. Batch cache clean targets eligible user apps, **not every byte of OS/system cache**. Package naming and OEM process visibility can limit the running snapshot. Rooted users can start Shizuku with root; direct `su` is not required.
+**বাংলা:** root বা Shizuku লাগবে না। RAM/storage, app list ও search সরাসরি চলবে। App-এর size দেখতে চাইলে ঐচ্ছিক Usage Access দিন। অন্য app-এর cache/data clear, force-stop বা disable/enable করতে app নির্বাচন করে **Open App info** চাপুন; Android Settings-এ কাজটি নিজে নিশ্চিত করুন।
 
-## Install and enable
+## Platform limits
 
-1. Download the APK from a successful GitHub Release and allow installation from that source.
-2. Open **Access → Usage Access**, select DATACLIAR and enable it for storage figures.
-3. Install [Shizuku](https://shizuku.rikka.app/download/) and start it. Android 11+ supports wireless debugging; older versions need a computer/ADB or root.
-4. Return to **Access → Connect / authorize Shizuku** and approve access.
-5. Refresh Apps. Tap any app for controls; use Frozen to restore hidden apps.
+Ordinary Android apps cannot automatically force-stop, freeze or clear other apps' private data/cache. DATACLIAR does not claim automatic boost, batch cleanup, live system process counts or system CPU load. App info controls differ by device and app. A Settings shortcut does not report that a management action succeeded. Work profiles are not managed.
 
-**বাংলা:** RAM/storage দেখতে root লাগে না। অন্য app stop/freeze/cache clear করতে Shizuku চালু করে permission দিতে হবে। Cache-only batch Android 13+ প্রয়োজন। Data clear করলে app-এর local data মুছে যাবে। Frozen tab থেকে unfreeze করুন।
+The old privileged control engine and Shizuku dependencies/provider/AIDL have been removed. There is no shell-command execution path.
 
-After reboot, Shizuku may need restarting. Some manufacturers impose additional restrictions; errors are surfaced, never presented as success. Unfreeze apps before uninstalling DATACLIAR. If needed, recover with `adb shell pm enable --user 0 PACKAGE` (replace user ID for a different profile). Freezing hides the launcher entry; it is not a stealth feature and remains visible in Android Settings.
+## Install
 
-## Build
+Download the APK from a successful release and allow installation from that source. No root setup or helper service is needed. Usage Access is optional under **Access**. If updating an older debug preview fails with a signature mismatch, uninstall the old preview first. If you previously froze apps in version 1.0, restore them through Android Settings or the old app before uninstalling it; this version cannot automatically restore them.
 
-Requires JDK 17, Android SDK 35 and Gradle 8.9.
+## Build and verification
+
+JDK 17, Android SDK 35 and Gradle 8.9:
 
 ```sh
-gradle testDebugUnitTest lintDebug assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
 ```
 
-The Actions workflow runs tests, lint and compilation, attaches verification reports, computes SHA-256 checksums and publishes an installable **debug-signed preview** only after all checks pass. These are sideload previews, not Play Store production releases. Each clean CI runner can use a different debug certificate: uninstall an older preview if Android reports a signature mismatch (unfreeze apps first). Production distribution needs a private release signing key stored in repository secrets; no signing secrets are committed.
+CI gates preview publication on unit tests, lint, APK compilation and an Android 35 emulator navigation/sandbox test. See [TESTING.md](TESTING.md). This does not certify every OEM device.
 
-## Verification scope
-
-Unit tests cover injection rejection, cache-only fail-closed behavior, user-scoped freeze/unfreeze commands, process deduplication, CPU counter accounting and foreground protection. Compilation and lint do not establish OEM device compatibility. Shizuku permission flows and destructive controls should be tested on disposable apps on the actual phone. See [manual test checklist](TESTING.md).
+Releases are installable **debug-signed prereleases**, not production-signed store builds. A clean runner may generate a different certificate, requiring uninstall/reinstall between previews. APK checksums accompany releases. Production distribution requires a private, persistent release signing key.
 
 ## Privacy
 
-No Internet permission, ads, analytics, account, upload or background monitoring service. Device/app information stays on the phone. Shizuku runs only the allow-listed commands after explicit user actions. The UI samples memory/CPU while visible. Source contains no arbitrary shell console.
-
-## Platform references
-
-- [Android StorageStatsManager](https://developer.android.com/reference/android/app/usage/StorageStatsManager)
-- [Shizuku API and user services](https://github.com/RikkaApps/Shizuku-API)
-- [AOSP package shell commands](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/core/java/com/android/server/pm/PackageManagerShellCommand.java)
+No Internet permission, ads, accounts, analytics, uploads, root, Shizuku or background monitoring service. Metrics update only while the app is visible. Usage Access can be revoked at any time.
