@@ -1,6 +1,8 @@
 plugins { id 'com.android.application' }
 def appVersion = new Properties()
 file('version.properties').withInputStream { appVersion.load(it) }
+def configuredVersionCode = (project.findProperty('versionCodeOverride') ?: appVersion.getProperty('versionCode')).toString().toInteger()
+def configuredVersionName = (project.findProperty('versionNameOverride') ?: appVersion.getProperty('versionName')).toString()
 android {
     namespace 'com.axiom.datacliar'
     compileSdk 35
@@ -8,8 +10,8 @@ android {
         applicationId 'com.axiom.datacliar'
         minSdk 26
         targetSdk 35
-        versionCode (project.findProperty('versionCodeOverride') ?: appVersion.getProperty('versionCode')).toInteger()
-        versionName (project.findProperty('versionNameOverride') ?: appVersion.getProperty('versionName'))
+        versionCode configuredVersionCode
+        versionName configuredVersionName
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildFeatures { aidl true }
